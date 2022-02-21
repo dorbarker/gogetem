@@ -1,6 +1,8 @@
 import argparse
 import requests
+import time
 import gzip
+import hashlib
 from pathlib import Path
 from typing import Generator
 import pandas as pd
@@ -133,10 +135,41 @@ def ena_query_format(results_table: pd.DataFrame) -> Generator[str, None, None]:
 
 
 def ena_fetch(ena_query: str) -> str:
-
+    # TODO: consider changing this a POST request
     response = requests.get(ena_query, params={"download": "true", "gzip": "true"})
 
     return gzip.decompress(response.content).decode()
+
+
+def ena_download_accessions(
+    ena_queries: Generator[str, None, None], download_path: Path
+) -> list[str]:
+    # uses hash of query url as the file name, so it can tell if a particular
+    # file has been downloaded already or not
+    #
+    # returns a list of failed queries
+    failed: list[str] = []
+
+    download_path.mkdir(parents=True, exist_ok=True)
+
+    for ena_query in ena_queries:
+
+        fasta_name = hashlib.md5(ena_query.encode()).hexdigest()
+        fasta_path = download_path.joinpath(f"{fasta_name}.fasta")
+
+        if fasta_path.exists():  # skip files we've already made
+            continue
+
+        fasta = ena_fetch(ena_query)
+        if fasta:
+            fasta_path.write_text(fasta)
+        else:
+            # as of right now, a failed query returns an empty string
+            failed.append(ena_query)
+
+        time.sleep(1)  # DBAD
+
+    return failed
 
 
 if __name__ == "__main__":
