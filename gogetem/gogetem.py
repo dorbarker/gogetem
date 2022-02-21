@@ -118,7 +118,6 @@ def parse_results(results: list[dict[str, dict[str, str]]]) -> pd.DataFrame:
 def ena_query_format(results_table: pd.DataFrame) -> Generator[str, None, None]:
 
     base_url = "https://www.ebi.ac.uk/ena/browser/api/fasta/"
-    ena_queries: list[str] = []
 
     current_accessions: list[str] = []
     query_length = len(base_url)
@@ -130,14 +129,12 @@ def ena_query_format(results_table: pd.DataFrame) -> Generator[str, None, None]:
 
         else:
             accession_list = ",".join(current_accessions)
-            ena_queries.append(f"{base_url}{accession_list}")
+            yield f"{base_url}{accession_list}"
             current_accessions = []
             query_length = len(base_url)
     else:
         accession_list = ",".join(current_accessions)
-        ena_queries.append(f"{base_url}{accession_list}")
-
-    return ena_queries
+        yield f"{base_url}{accession_list}"
 
 
 def ena_fetch(ena_query: str) -> str:
