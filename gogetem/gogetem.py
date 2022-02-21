@@ -1,4 +1,5 @@
 import argparse
+from pathlib import Path
 import pandas as pd
 from SPARQLWrapper import SPARQLWrapper, JSON
 
@@ -86,6 +87,21 @@ def query_submit(query: str) -> dict[str, str]:
     ret = sparql.queryAndConvert()
 
     return ret["results"]["bindings"]
+
+
+def parse_results(results: dict[str, str]) -> pd.DataFrame:
+
+    flattened = []
+    for record in results:
+        simplified_record = {}
+        for field, value in record.items():
+            simplified_record[field] = value["value"]
+        flattened.append(simplified_record)
+
+    df = pd.DataFrame(flattened)
+    df["ena_accession"] = [Path(p).name for p in df["link"]]
+
+    return df
 
 
 if __name__ == "__main__":
