@@ -79,7 +79,7 @@ def query_build(go_terms: list[int], include_amino_acids: bool = False) -> str:
     return query
 
 
-def query_submit(query: str) -> dict[str, str]:
+def query_submit(query: str) -> list[dict[str, dict[str, str]]]:
 
     sparql = SPARQLWrapper("https://sparql.uniprot.org/sparql")
     sparql.setReturnFormat(JSON)
@@ -89,7 +89,7 @@ def query_submit(query: str) -> dict[str, str]:
     return ret["results"]["bindings"]
 
 
-def parse_results(results: dict[str, str]) -> pd.DataFrame:
+def parse_results(results: list[dict[str, dict[str, str]]]) -> pd.DataFrame:
 
     flattened = []
     for record in results:
