@@ -1,6 +1,6 @@
 import argparse
-
-# from SPARQLWrapper import SPARQLWrapper, JSON
+import pandas as pd
+from SPARQLWrapper import SPARQLWrapper, JSON
 
 
 def arguments():
@@ -76,6 +76,16 @@ def query_build(go_terms: list[int], include_amino_acids: bool = False) -> str:
     query = "\n".join([prefixen, select_stmt, match_stmt])
 
     return query
+
+
+def query_submit(query: str) -> dict[str, str]:
+
+    sparql = SPARQLWrapper("https://sparql.uniprot.org/sparql")
+    sparql.setReturnFormat(JSON)
+    sparql.setQuery(query)
+    ret = sparql.queryAndConvert()
+
+    return ret["results"]["bindings"]
 
 
 if __name__ == "__main__":
