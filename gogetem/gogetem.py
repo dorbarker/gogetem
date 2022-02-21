@@ -1,5 +1,7 @@
 import argparse
+import requests
 from pathlib import Path
+from typing import Generator
 import pandas as pd
 from SPARQLWrapper import SPARQLWrapper, JSON
 
@@ -102,6 +104,38 @@ def parse_results(results: list[dict[str, dict[str, str]]]) -> pd.DataFrame:
     df["ena_accession"] = [Path(p).name for p in df["link"]]
 
     return df
+
+
+def ena_query_format(results_table: pd.DataFrame) -> Generator[str, None, None]:
+
+    base_url = "https://www.ebi.ac.uk/ena/browser/api/fasta/"
+    ena_queries: list[str] = []
+
+    current_accessions: list[str] = []
+    query_length = len(base_url)
+
+    for accession in results_table["ena_accession"]:
+
+        if query_length + len(accession) < 1000:
+            current_accessions.append(accession)
+
+        else:
+            accession_list = ",".join(current_accessions)
+            ena_queries.append(f"{base_url}{accession_list}")
+            current_accessions = []
+            query_length = len(base_url)
+    else:
+        accession_list = ",".join(current_accessions)
+        ena_queries.append(f"{base_url}{accession_list}")
+
+    return ena_queries
+
+
+def ena_fetch(ena_query: str):
+
+    response = requests.get(ena_query, params={"gzip": "true"})
+
+    return response.text
 
 
 if __name__ == "__main__":
