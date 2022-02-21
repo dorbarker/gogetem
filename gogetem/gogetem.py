@@ -1,5 +1,6 @@
 import argparse
 import requests
+import gzip
 from pathlib import Path
 from typing import Generator
 import pandas as pd
@@ -131,11 +132,11 @@ def ena_query_format(results_table: pd.DataFrame) -> Generator[str, None, None]:
     return ena_queries
 
 
-def ena_fetch(ena_query: str):
+def ena_fetch(ena_query: str) -> str:
 
-    response = requests.get(ena_query, params={"gzip": "true"})
+    response = requests.get(ena_query, params={"download": "true", "gzip": "true"})
 
-    return response.text
+    return gzip.decompress(response.content).decode()
 
 
 if __name__ == "__main__":
