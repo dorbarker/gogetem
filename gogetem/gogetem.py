@@ -67,5 +67,16 @@ def query_match(go_terms: list[int], include_amino_acids: bool = False) -> str:
     return "\n".join(where)
 
 
+def query_build(go_terms: list[int], include_amino_acids: bool = False) -> str:
+
+    prefixen = query_prefix()
+    select_stmt = query_select(include_amino_acids)
+    match_stmt = query_match(go_terms, include_amino_acids)
+
+    query = "\n".join([prefixen, select_stmt, match_stmt])
+
+    return query
+
+
 if __name__ == "__main__":
     main()
