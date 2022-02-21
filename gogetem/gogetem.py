@@ -46,7 +46,9 @@ def query_select(include_amino_acids: bool = False) -> str:
     return select
 
 
-def query_match(go_terms: list[int], include_amino_acids: bool = False) -> str:
+def query_match(
+    go_terms: list[int], include_amino_acids: bool = False, limit: int = 0
+) -> str:
 
     go_terms_str = " ".join(["{"] + [f"go:{g}" for g in go_terms] + ["}"])
 
@@ -56,6 +58,7 @@ def query_match(go_terms: list[int], include_amino_acids: bool = False) -> str:
     """
 
     aa_sequence_query = get_aa_sequence if include_amino_acids else ""
+    limit_keyword = f"LIMIT {limit}" if limit else ""
 
     where = [
         "WHERE {",
@@ -68,16 +71,19 @@ def query_match(go_terms: list[int], include_amino_acids: bool = False) -> str:
         "?link up:database ?database .",
         "?database rdfs:label 'EMBL nucleotide sequence database' . ",
         "}",
+        limit_keyword,
     ]
 
     return "\n".join(where)
 
 
-def query_build(go_terms: list[int], include_amino_acids: bool = False) -> str:
+def query_build(
+    go_terms: list[int], include_amino_acids: bool = False, limit: int = 0
+) -> str:
 
     prefixen = query_prefix()
     select_stmt = query_select(include_amino_acids)
-    match_stmt = query_match(go_terms, include_amino_acids)
+    match_stmt = query_match(go_terms, include_amino_acids, limit)
 
     query = "\n".join([prefixen, select_stmt, match_stmt])
 
