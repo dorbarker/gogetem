@@ -14,10 +14,30 @@ def arguments():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "--go-terms", nargs="+", type=int, help="GO terms to search for"
+        "--go-terms", nargs="+", type=str, help="GO terms to search for"
+    )
+
+    parser.add_argument(
+        "--limit", type=int, default=0, help="Number of records to retrieve [no limit]"
+    )
+
+    parser.add_argument(
+        "--include-amino-acids",
+        action="store_true",
+        help="Download amino acid sequences from UniProt",
+    )
+
+    parser.add_argument(
+        "--download-path", type=Path, required=True, help="Results directory"
     )
 
     args = parser.parse_args()
+
+    # validate GO terms
+    for go_term in args.go_terms:
+        if not is_valid_go_term(go_term):
+            invalid_go_term = f"{go_term} is not a valid numeric GO term."
+            raise argparse.ArgumentTypeError(invalid_go_term)
 
     return args
 
@@ -25,6 +45,17 @@ def arguments():
 def main():
 
     args = arguments()
+
+    uniprot_query = query_build(args.go_terms, args.include_amino_acids, args.limit)
+    uniprot_results = query_submit(uniprot_query)
+    uniprot_results_table = parse_results(uniprot_results)
+
+    ena_queries = ena_query_format(uniprot_results_table)
+    ena_download_accessions(ena_queries, args.download_path)
+
+
+def ena_retrieve():
+    pass
 
 
 def query_prefix() -> str:
@@ -47,7 +78,7 @@ def query_select(include_amino_acids: bool = False) -> str:
 
 
 def query_match(
-    go_terms: list[int], include_amino_acids: bool = False, limit: int = 0
+    go_terms: list[str], include_amino_acids: bool = False, limit: int = 0
 ) -> str:
 
     go_terms_str = " ".join(["{"] + [f"go:{g}" for g in go_terms] + ["}"])
@@ -173,6 +204,15 @@ def ena_download_accessions(
         time.sleep(1)  # DBAD
 
     return failed
+
+
+def is_valid_go_term(go_term: str) -> bool:
+    # Leading 0s in GO terms are significant,
+    # so we can't just test if the whole thing is an int
+    try:
+        return all([int(x) for x in go_term])
+    except ValueError:
+        return False
 
 
 if __name__ == "__main__":
