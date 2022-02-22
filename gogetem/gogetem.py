@@ -50,12 +50,23 @@ def main():
     uniprot_results = query_submit(uniprot_query)
     uniprot_results_table = parse_results(uniprot_results)
 
+    ena_retrieve(uniprot_results_table, args.download_path)
+
+
+def ena_retrieve(uniprot_results_table: pd.DataFrame, download_path: Path):
+
     ena_queries = ena_query_format(uniprot_results_table)
-    ena_download_accessions(ena_queries, args.download_path)
+    failed_queries = ena_download_accessions(ena_queries, download_path)
 
+    while failed_queries:
 
-def ena_retrieve():
-    pass
+        n_failed = len(failed_queries)
+        current_time = time.strftime("%Y-%m-%d %H:%M:%S")
+
+        print(f"{current_time} | Reattempting to download {n_failed} failed queries")
+
+        time.sleep(30)
+        failed_queries = ena_download_accessions(failed_queries, download_path)
 
 
 def query_prefix() -> str:
