@@ -208,17 +208,18 @@ def ena_query_format(results_table: pd.DataFrame) -> Generator[str, None, None]:
     query_length = 0
 
     for accession in results_table["ena_accession"]:
+        acc_len = len(accession)
 
-        if query_length + len(accession) < 1000:
+        if query_length + acc_len < 1000:
             current_accessions.append(accession)
-            query_length += len(accession)
+            query_length += acc_len
 
         else:
             accession_list = ",".join(current_accessions)
             yield accession_list
 
-            current_accessions = []
-            query_length = 0
+            current_accessions = [accession]
+            query_length = acc_len
     else:
         accession_list = ",".join(current_accessions)
         yield accession_list
