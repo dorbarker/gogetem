@@ -8,6 +8,8 @@ from collections.abc import Generator, Iterable
 import pandas as pd
 from SPARQLWrapper import SPARQLWrapper, JSON
 
+from gogetem import __version__
+
 
 def arguments():
 
@@ -29,6 +31,10 @@ def arguments():
 
     parser.add_argument(
         "--download-path", type=Path, required=True, help="Results directory"
+    )
+
+    parser.add_argument(
+        "-v", "--version", action="version", version=f"gogetem {__version__}"
     )
 
     args = parser.parse_args()
