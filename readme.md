@@ -15,3 +15,8 @@ python -m pip install gogetem
 ```commandline
 conda install -c conda-forge -c dorbarker gogetem 
 ```
+
+## Typical invocation
+```commandline
+gogetem --go-terms 0003677 --limit 2000 --download-path results/ --include-amino-acids
+```
