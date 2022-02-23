@@ -4,7 +4,7 @@ import time
 import gzip
 import hashlib
 from pathlib import Path
-from typing import Generator
+from collections.abc import Generator, Iterable
 import pandas as pd
 from SPARQLWrapper import SPARQLWrapper, JSON
 
@@ -51,6 +51,7 @@ def main():
     uniprot_results_table = parse_results(uniprot_results)
 
     ena_retrieve(uniprot_results_table, args.download_path)
+    amino_acids_write(uniprot_results_table, args.download_path)
 
 
 def ena_retrieve(uniprot_results_table: pd.DataFrame, download_path: Path):
@@ -67,6 +68,40 @@ def ena_retrieve(uniprot_results_table: pd.DataFrame, download_path: Path):
 
         time.sleep(30)
         failed_queries = ena_download_accessions(failed_queries, download_path)
+
+
+def amino_acids_write(uniprot_results_table: pd.DataFrame, download_path: Path):
+
+    aa_download_path = download_path.joinpath("amino_acid")
+    aa_download_path.mkdir(parents=True, exist_ok=True)
+
+    fasta_path = aa_download_path.joinpath("amino_acids.fasta")
+
+    formatted_aa_fasta = amino_acids_format(uniprot_results_table)
+
+    with fasta_path.open("w") as f:
+        f.writelines(formatted_aa_fasta)
+
+
+def amino_acids_format(
+    uniprot_results_table: pd.DataFrame,
+) -> Generator[str, None, None]:
+
+    fasta_format = (
+        amino_acid_format(row) for _, row in uniprot_results_table.iterrows()
+    )
+
+    return fasta_format
+
+
+def amino_acid_format(uniprot_row: pd.Series) -> str:
+
+    versioned_accession = uniprot_row["ena_accession"]
+    versionless_accession, _ = versioned_accession.split(".")
+    aa_sequence = uniprot_row["aa_sequence"]
+    description = uniprot_row["name"]
+
+    return f">ENA|{versionless_accession}|{versioned_accession}|{description}\n{aa_sequence}\n"
 
 
 def query_prefix() -> str:
@@ -120,7 +155,7 @@ def query_match(
 
 
 def query_build(
-    go_terms: list[int], include_amino_acids: bool = False, limit: int = 0
+    go_terms: list[str], include_amino_acids: bool = False, limit: int = 0
 ) -> str:
 
     prefixen = query_prefix()
@@ -187,7 +222,7 @@ def ena_fetch(ena_query: str) -> str:
 
 
 def ena_download_accessions(
-    ena_queries: Generator[str, None, None], download_path: Path
+    ena_queries: Iterable[str], download_path: Path
 ) -> list[str]:
     # uses hash of query url as the file name, so it can tell if a particular
     # file has been downloaded already or not
@@ -195,12 +230,13 @@ def ena_download_accessions(
     # returns a list of failed queries
     failed: list[str] = []
 
-    download_path.mkdir(parents=True, exist_ok=True)
+    nt_download_path = download_path.joinpath("nucleotide")
+    nt_download_path.mkdir(parents=True, exist_ok=True)
 
     for ena_query in ena_queries:
 
         fasta_name = hashlib.md5(ena_query.encode()).hexdigest()
-        fasta_path = download_path.joinpath(f"{fasta_name}.fasta")
+        fasta_path = nt_download_path.joinpath(f"{fasta_name}.fasta")
 
         if fasta_path.exists():  # skip files we've already made
             continue
