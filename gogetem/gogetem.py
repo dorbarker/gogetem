@@ -50,6 +50,8 @@ def main():
     uniprot_results = query_submit(uniprot_query)
     uniprot_results_table = parse_results(uniprot_results)
 
+    uniprot_table_save(uniprot_results_table, args.download_path)
+
     ena_retrieve(uniprot_results_table, args.download_path)
     amino_acids_write(uniprot_results_table, args.download_path)
 
@@ -102,6 +104,14 @@ def amino_acid_format(uniprot_row: pd.Series) -> str:
     description = uniprot_row["name"]
 
     return f">ENA|{versionless_accession}|{versioned_accession}|{description}\n{aa_sequence}\n"
+
+
+def uniprot_table_save(uniprot_results_table: pd.DataFrame, download_path: Path):
+
+    download_path.mkdir(exist_ok=True)
+    uniprot_results_table.to_csv(
+        download_path.joinpath("uniprot_results.tsv"), sep="\t", index=False
+    )
 
 
 def query_prefix() -> str:
