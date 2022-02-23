@@ -194,29 +194,31 @@ def parse_results(results: list[dict[str, dict[str, str]]]) -> pd.DataFrame:
 
 def ena_query_format(results_table: pd.DataFrame) -> Generator[str, None, None]:
 
-    base_url = "https://www.ebi.ac.uk/ena/browser/api/fasta/"
-
     current_accessions: list[str] = []
-    query_length = len(base_url)
+    query_length = 0
 
     for accession in results_table["ena_accession"]:
 
         if query_length + len(accession) < 1000:
             current_accessions.append(accession)
+            query_length += len(accession)
 
         else:
             accession_list = ",".join(current_accessions)
-            yield f"{base_url}{accession_list}"
+            yield accession_list
+
             current_accessions = []
-            query_length = len(base_url)
+            query_length = 0
     else:
         accession_list = ",".join(current_accessions)
-        yield f"{base_url}{accession_list}"
+        yield accession_list
 
 
 def ena_fetch(ena_query: str) -> str:
     # TODO: consider changing this a POST request
-    response = requests.get(ena_query, params={"download": "true", "gzip": "true"})
+    base_url = "https://www.ebi.ac.uk/ena/browser/api/fasta/"
+    query = f"{base_url}{ena_query}"
+    response = requests.get(query, params={"download": "true", "gzip": "true"})
 
     return gzip.decompress(response.content).decode()
 
