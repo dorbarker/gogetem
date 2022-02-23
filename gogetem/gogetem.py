@@ -259,7 +259,8 @@ def is_valid_go_term(go_term: str) -> bool:
     # Leading 0s in GO terms are significant,
     # so we can't just test if the whole thing is an int
     try:
-        return all([int(x) for x in go_term])
+        [int(x) for x in go_term]
+        return True
     except ValueError:
         return False
 
