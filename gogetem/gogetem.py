@@ -15,6 +15,8 @@ def arguments():
 
     parser = argparse.ArgumentParser()
 
+    download_location = parser.add_mutually_exclusive_group(required=True)
+
     parser.add_argument(
         "--go-terms", nargs="+", type=str, help="GO terms to search for"
     )
@@ -29,8 +31,18 @@ def arguments():
         help="Download amino acid sequences from UniProt",
     )
 
-    parser.add_argument(
-        "--download-path", type=Path, required=True, help="Results directory"
+    download_location.add_argument(
+        "--download-path",
+        type=Path,
+        help="Results directory. Will overwrite existing data found at that location.",
+    )
+
+    download_location.add_argument(
+        "--resume",
+        type=Path,
+        help="If this path points to a previously-specified path given by --download-path,"
+        " and uniprot_results.tsv has been generated under it, gogetem will attempt to"
+        " resume downloading nucleotide data",
     )
 
     parser.add_argument(
