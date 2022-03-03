@@ -15,6 +15,8 @@ def arguments():
 
     parser = argparse.ArgumentParser()
 
+    download_location = parser.add_mutually_exclusive_group(required=True)
+
     parser.add_argument(
         "--go-terms", nargs="+", type=str, help="GO terms to search for"
     )
@@ -29,8 +31,18 @@ def arguments():
         help="Download amino acid sequences from UniProt",
     )
 
-    parser.add_argument(
-        "--download-path", type=Path, required=True, help="Results directory"
+    download_location.add_argument(
+        "--download-path",
+        type=Path,
+        help="Results directory. Will overwrite existing data found at that location.",
+    )
+
+    download_location.add_argument(
+        "--resume",
+        type=Path,
+        help="If this path points to a previously-specified path given by --download-path,"
+        " and uniprot_results.tsv has been generated under it, gogetem will attempt to"
+        " resume downloading nucleotide data",
     )
 
     parser.add_argument(
@@ -52,14 +64,25 @@ def main():
 
     args = arguments()
 
-    uniprot_query = query_build(args.go_terms, args.include_amino_acids, args.limit)
-    uniprot_results = query_submit(uniprot_query)
-    uniprot_results_table = parse_results(uniprot_results)
+    results_path = args.download_path or args.resume
 
-    uniprot_table_save(uniprot_results_table, args.download_path)
+    if args.resume is None:  # if no prior results exist
 
-    ena_retrieve(uniprot_results_table, args.download_path)
-    amino_acids_write(uniprot_results_table, args.download_path)
+        uniprot_query = query_build(args.go_terms, args.include_amino_acids, args.limit)
+
+        uniprot_results = query_submit(uniprot_query)
+        uniprot_results_table = parse_results(uniprot_results)
+        uniprot_table_save(uniprot_results_table, args.download_path)
+
+        args.download_path.joinpath("query.txt").write_text(uniprot_query)
+
+    # load previously generated table if the --resume option is used
+    else:
+        uniprot_results_table = pd.read_csv(
+            args.resume.joinpath("uniprot_results.tsv"), sep="\t"
+        )
+    ena_retrieve(uniprot_results_table, results_path)
+    amino_acids_write(uniprot_results_table, results_path)
 
 
 def ena_retrieve(uniprot_results_table: pd.DataFrame, download_path: Path):
