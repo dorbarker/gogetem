@@ -64,14 +64,22 @@ def main():
 
     args = arguments()
 
-    uniprot_query = query_build(args.go_terms, args.include_amino_acids, args.limit)
-    uniprot_results = query_submit(uniprot_query)
-    uniprot_results_table = parse_results(uniprot_results)
+    results_path = args.download_path or args.resume
 
-    uniprot_table_save(uniprot_results_table, args.download_path)
+    if args.resume is None:  # if no prior results exist
+        uniprot_query = query_build(args.go_terms, args.include_amino_acids, args.limit)
+        uniprot_results = query_submit(uniprot_query)
+        uniprot_results_table = parse_results(uniprot_results)
+        uniprot_table_save(uniprot_results_table, args.download_path)
 
-    ena_retrieve(uniprot_results_table, args.download_path)
-    amino_acids_write(uniprot_results_table, args.download_path)
+    # load previously generated table if the --resume option is used
+    else:
+        uniprot_results_table = pd.read_csv(
+            args.resume.joinpath("uniprot_results.tsv"), sep="\t"
+        )
+
+    ena_retrieve(uniprot_results_table, results_path)
+    amino_acids_write(uniprot_results_table, results_path)
 
 
 def ena_retrieve(uniprot_results_table: pd.DataFrame, download_path: Path):
