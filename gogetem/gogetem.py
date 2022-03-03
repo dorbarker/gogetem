@@ -67,10 +67,14 @@ def main():
     results_path = args.download_path or args.resume
 
     if args.resume is None:  # if no prior results exist
+
         uniprot_query = query_build(args.go_terms, args.include_amino_acids, args.limit)
+
         uniprot_results = query_submit(uniprot_query)
         uniprot_results_table = parse_results(uniprot_results)
         uniprot_table_save(uniprot_results_table, args.download_path)
+
+        args.download_path.joinpath("query.txt").write_text(uniprot_query)
 
     # load previously generated table if the --resume option is used
     else:
