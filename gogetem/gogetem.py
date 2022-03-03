@@ -82,7 +82,9 @@ def main():
             args.resume.joinpath("uniprot_results.tsv"), sep="\t"
         )
     ena_retrieve(uniprot_results_table, results_path)
-    amino_acids_write(uniprot_results_table, results_path)
+
+    if args.include_amino_acids:
+        amino_acids_write(uniprot_results_table, results_path)
 
 
 def ena_retrieve(uniprot_results_table: pd.DataFrame, download_path: Path):
