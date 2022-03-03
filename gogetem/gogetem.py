@@ -59,9 +59,7 @@ def main():
     uniprot_table_save(uniprot_results_table, args.download_path)
 
     ena_retrieve(uniprot_results_table, args.download_path)
-
-    if args.include_amino_acids:
-        amino_acids_write(uniprot_results_table, args.download_path)
+    amino_acids_write(uniprot_results_table, args.download_path)
 
 
 def ena_retrieve(uniprot_results_table: pd.DataFrame, download_path: Path):
